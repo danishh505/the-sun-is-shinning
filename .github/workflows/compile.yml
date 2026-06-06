@@ -1,0 +1,42 @@
+name: Auto Compile cl.exe dan Publish ke Releases
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  compile_and_release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Ambil Code dari Repositori
+      uses: actions/checkout@v4
+
+    # 1. Mengekstrak file jika ada zip baru
+    - name: Mengekstrak redsun.zip
+      run: |
+        if (Test-Path redsun.zip) {
+            Expand-Archive -Path redsun.zip -DestinationPath . -Force
+        }
+
+    # 2. Menyiapkan lingkungan compiler cl.exe
+    - name: Setup MSVC (cl.exe)
+      uses: ilammy/msvc-dev-cmd@v1
+
+    # 3. Proses Compile (WAJIB menggunakan flag /DUNICODE /D_UNICODE)
+    - name: Compile dengan cl.exe
+      run: |
+        cl.exe /EHsc /DUNICODE /D_UNICODE RedSun.cpp
+
+    # 4. Membuat Tag & Upload .EXE langsung ke Halaman Releases
+    - name: Upload ke GitHub Releases
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: RedSun Build v1.0.${{ github.run_number }}
+        body: |
+          Aplikasi RedSun.exe berhasil di-compile otomatis.
+          ID Kompilasi: ${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: RedSun.exe
