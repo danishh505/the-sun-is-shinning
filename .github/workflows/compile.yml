@@ -1,0 +1,45 @@
+name: Auto Compile cl.exe dan Push EXE
+on: [push, workflow_dispatch]
+
+# Memberikan izin agar bot GitHub bisa mengunggah file .exe kembali ke repositori
+permissions:
+  contents: write
+
+jobs:
+  compile_and_push:
+    runs-on: windows-latest # Wajib menggunakan Windows untuk cl.exe
+
+    steps:
+    - name: Ambil Code dari Repositori
+      uses: actions/checkout@v4
+
+    # 1. Mengekstrak file jika kamu mengunggah versi zip baru
+    - name: Mengekstrak redsun.zip
+      run: |
+        if (Test-Path redsun.zip) {
+            Expand-Archive -Path redsun.zip -DestinationPath . -Force
+        }
+
+    # 2. Menyiapkan lingkungan compiler Microsoft (cl.exe)
+    - name: Setup MSVC (cl.exe)
+      uses: ilammy/msvc-dev-cmd@v1
+
+    # 3. Proses Compile menggunakan cl.exe
+    - name: Compile dengan cl.exe
+      run: |
+        cl.exe /EHsc RedSun.cpp
+
+    # 4. Melakukan Commit dan Push file RedSun.exe kembali ke GitHub
+    - name: Push File EXE ke Repositori
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        
+        # Menambahkan file .exe hasil compile ke Git tracking
+        git add RedSun.exe
+        
+        # Melakukan commit (hanya jika ada perubahan atau file baru)
+        git commit -m "Automated: Hasil compile RedSun.exe terbaru"
+        
+        # Melakukan push kembali ke branch asal (main)
+        git push
