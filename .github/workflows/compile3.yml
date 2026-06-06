@@ -1,0 +1,35 @@
+name: Auto Compile cl.exe dan Publish ke Releases
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+jobs:
+  compile_and_release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Ambil Code dari Repositori
+      uses: actions/checkout@v4
+
+    # 1. Menyiapkan lingkungan compiler cl.exe
+    - name: Setup MSVC (cl.exe)
+      uses: ilammy/msvc-dev-cmd@v1
+
+    # 2. Proses Compile & Link (WAJIB menyertakan .lib di ujungnya agar tidak LNK2019)
+    - name: Compile dengan cl.exe
+      run: |
+        cl.exe /EHsc /DUNICODE /D_UNICODE RedSun.cpp advapi32.lib user32.lib ole32.lib
+
+    # 3. Membuat Tag & Upload .EXE langsung ke Halaman Releases
+    - name: Upload ke GitHub Releases
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: RedSun Build v1.0.${{ github.run_number }}
+        body: |
+          Kompilasi selesai! Masalah Linker (LNK2019) resmi teratasi.
+          ID Kompilasi: ${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: RedSun.exe
